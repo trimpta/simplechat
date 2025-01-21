@@ -49,8 +49,8 @@ def broadcast_to_all(message:str):
         clients[client][1].send(message.encode())
 
 
-def broadcast_message_to_all(sender:str, message: str)
-    broadcast_to_all(f"{sender} : {message}")
+def format_message(sender:str, message: str):
+    return f"{sender} : {message}"
 
 
 
@@ -76,12 +76,30 @@ def client_handler(conn: socket.socket, addr:str):
                 commands_queue.append(message)
                 continue
             
-            broadcast_message_to_all(nickname, message)
+            messages_queue.append(format_message(nickname, message))
 
     except Exception as e:
         print(f"CLIENTERROR: Error recieving message from {nickname}@{addr}")
+
+
+def broadcast_messages():
+    while True:
+        
+        if not message_queue:
+            continue
+
+        popped_messages, message_queue = message_queue, []
+        
+        for client in clients:
+            
+            try:
+                clients[client][0].send(pickle.dumps(popped_messages))
+            except Exception as e:
+                print(e)
+                #Disconnect client
     
 
 
-clients:dict[str, list[socket.socket,list[tuple]]] = {}  # {nick : [connection/1, (address, port)/2]}
+clients:dict[str, list[socket.socket,list[tuple]]] = {}  # {nick : [connection/0, (address, port)/1]}
 commands_queue = []
+messages_queue = []
