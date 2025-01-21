@@ -1,4 +1,3 @@
-import asyncio
 import threading
 import pickle
 import http.server
@@ -8,6 +7,14 @@ import re
 
 HOST, PORT, WEB_PORT = '0.0.0.0', 82382, 8000
 VALID_USERNAME = re.compile(r"^[A-Za-z0-9\-_\.]{3,20}$")
+
+JOIN_MSG = "{} JOINED THE CHAT!"
+
+server_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+server_conn.bind((HOST, PORT))
+server_conn.settimeout(500)
+server_conn.listen()
+
 
 
 
@@ -42,11 +49,11 @@ def message_validator(message: str) -> bool:
     return True
 
 def is_command(message: str) -> bool:
-    return True
+    return False
 
-def broadcast_to_all(message:str):
-    for client in clients:
-        clients[client][1].send(message.encode())
+# def broadcast_to_all(message:str):
+#     for client in clients:
+#         clients[client][1].send(message.encode())
 
 
 def format_message(sender:str, message: str):
@@ -64,6 +71,7 @@ def client_handler(conn: socket.socket, addr:str):
         conn.close()
 
     clients[nickname] = [conn, addr]
+    messages_queue.append(JOIN_MSG.format(nickname))
 
     try:
         while True:
@@ -103,3 +111,9 @@ def broadcast_messages():
 clients:dict[str, list[socket.socket,list[tuple]]] = {}  # {nick : [connection/0, (address, port)/1]}
 commands_queue = []
 messages_queue = []
+
+
+
+while True:
+    conn,addr = server_conn.accept()
+    client_thread = threading.thread(target = client_handler, args = (conn, addr))
