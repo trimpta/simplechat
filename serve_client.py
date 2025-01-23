@@ -5,10 +5,17 @@ import socketserver
 import socket
 import re
 
-HOST, PORT, WEB_PORT = '0.0.0.0', 82382, 8000
+HOST, PORT, WEB_PORT = '0.0.0.0', 5906, 8000
 VALID_USERNAME = re.compile(r"^[A-Za-z0-9\-_\.]{3,20}$")
 
+
 JOIN_MSG = "{} JOINED THE CHAT!"
+
+
+clients:dict[str, list[socket.socket,list[tuple]]] = {}  # {nick : [connection/0, (address, port)/1]}
+commands_queue = []
+message_queue = []
+
 
 server_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server_conn.bind((HOST, PORT))
@@ -71,7 +78,7 @@ def client_handler(conn: socket.socket, addr:str):
         conn.close()
 
     clients[nickname] = [conn, addr]
-    messages_queue.append(JOIN_MSG.format(nickname))
+    message_queue.append(JOIN_MSG.format(nickname))
 
     try:
         while True:
@@ -84,13 +91,15 @@ def client_handler(conn: socket.socket, addr:str):
                 commands_queue.append(message)
                 continue
             
-            messages_queue.append(format_message(nickname, message))
+            message_queue.append(format_message(nickname, message))
 
     except Exception as e:
         print(f"CLIENTERROR: Error recieving message from {nickname}@{addr}")
 
 
 def broadcast_messages():
+    global message_queue
+    
     while True:
         
         if not message_queue:
@@ -107,13 +116,15 @@ def broadcast_messages():
                 #Disconnect client
     
 
+def main():
 
-clients:dict[str, list[socket.socket,list[tuple]]] = {}  # {nick : [connection/0, (address, port)/1]}
-commands_queue = []
-messages_queue = []
+    broadcast_thread = threading.Thread(target = broadcast_messages)
+    broadcast_thread.start()
+
+    while True:
+        conn,addr = server_conn.accept()
+        client_thread = threading.Thread(target = client_handler, args = (conn, addr))
+        client_thread.start()
 
 
-
-while True:
-    conn,addr = server_conn.accept()
-    client_thread = threading.thread(target = client_handler, args = (conn, addr))
+main()
