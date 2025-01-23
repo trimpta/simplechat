@@ -50,6 +50,7 @@ def get_username(conn: socket.socket) -> str:
     else:
         raise ValueError
     
+    conn.send(b'NICK_OK')
     return nickname
 
 def message_validator(message: str) -> bool:
@@ -82,7 +83,7 @@ def client_handler(conn: socket.socket, addr:str):
 
     try:
         while True:
-            message = conn.recv(512).decode()
+            message = conn.recv(1024).decode()
             
             if not message_validator(nickname, message):
                 continue
@@ -114,6 +115,8 @@ def broadcast_messages():
             except Exception as e:
                 print(e)
                 #Disconnect client
+
+        print('\n'.join(popped_messages))
     
 
 def main():
