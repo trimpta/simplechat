@@ -6,6 +6,12 @@ import re
 
 SERVER_IP, SERVER_PORT = 'localhost',5906
 
+nick = None
+
+
+
+def format_message(sender:str, message: str):
+    return f"{sender} : {message}"
 
 def initiate_connection():
     conn_forward = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,10 +44,12 @@ def complete_connection():
     return conn_backward
 
 def login(conn: socket.socket):
+    global nick
 
     while True:
         msg = conn.recv(1024).decode()
         print(f"Logging in: {msg}")
+        
         if msg != "NICK_SEND":
             raise(ValueError(msg))
         
@@ -51,6 +59,7 @@ def login(conn: socket.socket):
         response = conn.recv(1024).decode()
 
         if response == 'NICK_OK':
+            print("Login successful.")
             return True
 
         if response == 'NICK_INVALID':
@@ -67,6 +76,8 @@ def disconnect(conn_forward: socket.socket, conn_backward: socket.socket):
 
 
 def recieve_messages(conn_forward: socket.socket):
+    
+    print("Recieving messages")
 
     while True:
         
@@ -74,7 +85,10 @@ def recieve_messages(conn_forward: socket.socket):
 
             messages = pickle.loads(conn_forward.recv(1024))
             for message in messages:
-                print(message)
+                sender, text = message
+                if sender != nick:
+                    print(format_message(sender, text))
+
 
         except Exception as e:
             print("Error while recieving message. Contact administrator.")
@@ -113,5 +127,5 @@ def main():
     send.start()
 
 
-main()
-    
+if __name__ == '__main__':
+    main()

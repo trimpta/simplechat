@@ -1,2 +1,0 @@
-add back buffer since i have no clue how async works
-or implement async.
