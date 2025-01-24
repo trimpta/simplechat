@@ -35,9 +35,9 @@ def disconnect(nickname: str):
 
     clients.pop(nickname)
 
-def web_hander():
+def web_handler():
     hander = http.server.SimpleHTTPRequestHandler(directory="out")
-    with socketserver.TCPServer(("", WEB_PORT), hander) as httpd:
+    with socketserver.TCPServer("", WEB_PORT, hander) as httpd:
         print("serving at port", WEB_PORT)
         httpd.serve_forever()
 
@@ -91,7 +91,6 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
                 disconnect(nickname)
                 raise ValueError("Empty message recieved")
 
-            print(f"Recieved message from {nickname}@{addr}: {message}")
 
             if not is_valid_message(message):
                 continue
@@ -101,7 +100,6 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
                 continue
             
             message_queue.append((nickname, message))
-            print(f"Added message from {nickname}@{addr} to queue")
 
     except Exception as e:
         print(f"CLIENTERROR: Error recieving message from {nickname}@{addr}")

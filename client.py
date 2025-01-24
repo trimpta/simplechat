@@ -4,7 +4,7 @@ import socket
 import argparse
 import re
 
-SERVER_IP, SERVER_PORT = 'localhost',5906
+SERVER_IP, SERVER_PORT = '192.168.29.200',5906
 
 nick = None
 
