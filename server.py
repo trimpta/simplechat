@@ -48,10 +48,7 @@ def disconnect(nickname: str):
     clients.pop(nickname)
 
 def web_handler():
-    hander = http.server.SimpleHTTPRequestHandler(directory="out")
-    with socketserver.TCPServer("", WEB_PORT, hander) as httpd:
-        print("serving at port", WEB_PORT)
-        httpd.serve_forever()
+    raise NotImplementedError
 
 def commands_hander():
     """Handles commands recieved from clients"""
