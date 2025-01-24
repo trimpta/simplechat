@@ -1,8 +1,8 @@
 import threading
+import time
 import pickle
 import socket
-import argparse
-import re
+import sys
 
 
 SERVER_IP, SERVER_PORT = 'localhost',5906
@@ -39,10 +39,10 @@ def initiate_connection() -> socket.socket:
     try:
         conn_forward.connect((SERVER_IP, SERVER_PORT))
         conn_forward.settimeout(TIMEOUT)
-        print("Established connection with server.")
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
+        disconnect()
         # print(f"Error: {e}")
 
 
@@ -60,10 +60,11 @@ def complete_connection() -> socket.socket:
     try:
         conn_backward.connect((SERVER_IP, SERVER_PORT + 1))
         conn_backward.settimeout(TIMEOUT)
-        print("Established reverse connection with server.")
+        print("Connected.")
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
+        disconnect()
         # print(f"Error: {e}")
 
     return conn_backward
@@ -126,8 +127,14 @@ def disconnect():
     global conn_backward, conn_forward, stop_threads
     stop_threads = True
     
-    safe_close(conn_backward, "DISCONNECT")
-    safe_close(conn_forward)
+    try:
+        safe_close(conn_backward, "DISCONNECT")
+        safe_close(conn_forward)
+    except Exception as e:
+        print("Error while disconnecting. Contact administrator.")
+        # print(f"Error: {e}")
+    print("Press Enter to close.")
+    sys.exit()
 
 
 
@@ -138,7 +145,6 @@ def recieve_messages(conn_forward: socket.socket):
         conn_forward (socket.socket): connection with the server used to recieve messages
     """
     
-    print("Recieving messages")
 
     while not stop_threads:
         
@@ -181,6 +187,8 @@ def send_messages(conn_backward: socket.socket):
             print("Error while sending message. Contact administrator.")
             # print(f"Error: {e}")
             disconnect()
+        
+    return
 
 
 def main():
@@ -198,6 +206,12 @@ def main():
 
     recv.start()
     send.start()
+
+    # while True:
+    #     time.sleep(1)
+    #     if stop_threads:
+            
+            
 
 
 if __name__ == '__main__':

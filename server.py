@@ -14,8 +14,7 @@ JOIN_MSG = "{} JOINED THE CHAT!"
 clients:dict[str, list[socket.socket,list[tuple]], list[socket.socket,list[tuple]]] = {}  # {nick : [forward_connection/0, backward_connection/1, (address, port)/2]}
 commands_queue = []
 message_queue = []
-commands = ['/exit', '/list', '/help']
-commands_description = {
+commands = {
     '/exit': 'Disconnect from chat',
     '/list': 'List all connected members',
     '/help': 'List all commands'
@@ -47,9 +46,6 @@ def disconnect(nickname: str):
     message_queue.append(("SERVER", f"{nickname} LEFT THE CHAT!"))
     clients.pop(nickname)
 
-def web_handler():
-    raise NotImplementedError
-
 def commands_hander():
     """Handles commands recieved from clients"""
 
@@ -77,7 +73,7 @@ def commands_hander():
                 clients[sender][0].send(pickle.dumps(msg))
             elif command == '/help':
                 msg =  [
-                    ("SERVER: ", ''.join([f"\t{command} : {commands_description[command]}\n" for command in commands])),
+                    ("SERVER: ", ''.join([f"\t{command} : {commands[command]}\n" for command in commands])),
                 ]                
                 clients[sender][0].send(pickle.dumps(msg))
         
