@@ -7,7 +7,7 @@ Windows clients:
     curl -s http://<ip_address>:8000/client.py -o client.py && python client.py
 
 Linux clients:
-    wget http://<ip_address>:8000/client.py && python client.py
+    wget http://<ip_address>:8000/client.py && python3 client.py
 """
 
 import socket
