@@ -33,6 +33,7 @@ def disconnect(nickname: str):
     clients[nickname][0].close()
     clients[nickname][1].close()
 
+    message_queue.append(("SERVER", f"{nickname} LEFT THE CHAT!"))
     clients.pop(nickname)
 
 def web_handler():
@@ -89,8 +90,11 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
 
             if not message:
                 disconnect(nickname)
-                raise ValueError("Empty message recieved")
-
+                break
+            
+            if message == "DISCONNECT":
+                disconnect(nickname)
+                break
 
             if not is_valid_message(message):
                 continue
@@ -121,7 +125,7 @@ def broadcast_messages():
             popped_messages = message_queue
             message_queue = []
 
-        print('\n'.join([message for sender, message in popped_messages]))
+        print('\n'.join([f"{sender} : {message}" for sender, message in popped_messages]))
         
         for client in clients:
             

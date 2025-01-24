@@ -6,6 +6,8 @@ import re
 
 SERVER_IP, SERVER_PORT = '192.168.29.200',5906
 
+stop_threads = False
+
 nick = None
 
 
@@ -24,7 +26,7 @@ def initiate_connection():
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
-        print(f"Error: {e}")
+        # print(f"Error: {e}")
 
 
     return conn_forward
@@ -39,7 +41,7 @@ def complete_connection():
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
-        print(f"Error: {e}")
+        # print(f"Error: {e}")
 
     return conn_backward
 
@@ -51,7 +53,8 @@ def login(conn: socket.socket):
         print(f"Logging in: {msg}")
         
         if msg != "NICK_SEND":
-            raise(ValueError(msg))
+            disconnect()
+            print("Error while logging in. Please contact administrator.")
         
         nick = input("Enter your nickname: ")
         conn.send(nick.encode())
@@ -70,16 +73,29 @@ def login(conn: socket.socket):
             
     return False
 
-def disconnect(conn_forward: socket.socket, conn_backward: socket.socket):
-    conn_backward.close()
-    conn_forward.close()
+def safe_close(conn: socket.socket, message: str = None):
+    try:
+        if message:
+            conn.send(message.encode())
+
+        conn.close()
+    except:
+        pass
+
+def disconnect():
+    global conn_backward, conn_forward, stop_threads
+    stop_threads = True
+    
+    safe_close(conn_backward, "DISCONNECT")
+    safe_close(conn_forward)
+
 
 
 def recieve_messages(conn_forward: socket.socket):
     
     print("Recieving messages")
 
-    while True:
+    while not stop_threads:
         
         try:
 
@@ -92,21 +108,27 @@ def recieve_messages(conn_forward: socket.socket):
 
         except Exception as e:
             print("Error while recieving message. Contact administrator.")
-            print(f"Error: {e}")
+            # print(f"Error: {e}")
             disconnect()
 
 def send_messages(conn_backward: socket.socket):
 
-    while True:
+    while not stop_threads:
         
         try:
 
             message = input(">>>")
+
+            if message == "exit":
+                conn_backward.send(b'DISCONNECTING')
+                disconnect()
+                break
+
             conn_backward.send(message.encode())
 
         except Exception as e:
             print("Error while sending message. Contact administrator.")
-            print(f"Error: {e}")
+            # print(f"Error: {e}")
             disconnect()
 
 
