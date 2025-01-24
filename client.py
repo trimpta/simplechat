@@ -5,6 +5,7 @@ import argparse
 import re
 
 SERVER_IP, SERVER_PORT = 'localhost',5906
+TIMEOUT = 60*120
 
 stop_threads = False
 
@@ -21,7 +22,7 @@ def initiate_connection():
 
     try:
         conn_forward.connect((SERVER_IP, SERVER_PORT))
-        conn_forward.settimeout(50)
+        conn_forward.settimeout(TIMEOUT)
         print("Established connection with server.")
 
     except Exception as e:
@@ -36,7 +37,7 @@ def complete_connection():
 
     try:
         conn_backward.connect((SERVER_IP, SERVER_PORT + 1))
-        conn_backward.settimeout(50)
+        conn_backward.settimeout(TIMEOUT)
         print("Established reverse connection with server.")
 
     except Exception as e:
@@ -50,7 +51,6 @@ def login(conn: socket.socket):
 
     while True:
         msg = conn.recv(1024).decode()
-        print(f"Logging in: {msg}")
         
         if msg != "NICK_SEND":
             disconnect()

@@ -7,7 +7,7 @@ import re
 
 HOST, PORT, WEB_PORT = '0.0.0.0', 5906, 8000
 VALID_USERNAME = re.compile(r"^[A-Za-z0-9\-_\.]{3,20}$")
-
+TIMEOUT = 60*120
 
 JOIN_MSG = "{} JOINED THE CHAT!"
 
@@ -25,7 +25,7 @@ commands_description = {
 #initialize sockets for server and reciever
 server_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server_conn.bind((HOST, PORT))
-server_conn.settimeout(60*10)
+server_conn.settimeout(TIMEOUT)
 server_conn.listen()
 
 recv_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -35,6 +35,11 @@ recv_conn.listen()
 
 
 def disconnect(nickname: str):
+    """Disconnects a user from the chat
+
+    Args:
+        nickname (str): The nickname of the user to be disconnected
+    """
     
     clients[nickname][0].close()
     clients[nickname][1].close()
@@ -49,6 +54,8 @@ def web_handler():
         httpd.serve_forever()
 
 def commands_hander():
+    """Handles commands recieved from clients"""
+
     global commands_queue
     
     while True:
@@ -80,6 +87,17 @@ def commands_hander():
 
 
 def get_username(conn_forward: socket.socket) -> str:
+    """Gets the username of the client
+
+    Args:
+        conn_forward (socket.socket): The socket connection to the client
+
+    Raises:
+        ValueError: If the username is invalid
+
+    Returns:
+        str: The username of the client
+    """
     
     for _ in range(3):
         conn_forward.send(b'NICK_SEND')
@@ -102,14 +120,42 @@ def get_username(conn_forward: socket.socket) -> str:
     return nickname
 
 def is_valid_message(message: str) -> bool:
+    """Checks if a message is valid
+
+    Args:
+        message (str): The message to be checked
+
+    Returns:
+        bool: True if the message is valid, False otherwise
+    """
+
     return True
 
 def is_command(message: str) -> bool:
+    """Checks if a message is a command
+
+    Args:
+        message (str): The message to be checked
+
+    Returns:
+        bool: True if the message is a command, False otherwise
+    """
+
     return message in commands
 
 
 
 def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
+    """Handles messages recieved from clients
+
+    Args:
+        conn_forward (socket.socket): connection to the client used to send messages from server to client
+        addr (str): address of the client
+        nickname (str): nickname of the client
+
+    Raises:
+        ValueError: If an empty message is recieved
+    """
 
     print(f"New connection from {nickname}@{addr}")
 
@@ -144,6 +190,8 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
 
 
 def broadcast_messages():
+    """Broadcasts messages to all clients and prints them to the server"""
+
     global message_queue
     
     while True:
@@ -167,6 +215,7 @@ def broadcast_messages():
                 disconnect(client)
 
 def accept_connections():
+    """Accepts connections from clients and creates a new thread to handle each client connection"""
     
     while True:
         #conn_forward is used to send messages to client, and conn_backward is used to recieve messages from client
@@ -198,7 +247,6 @@ def accept_connections():
         client_thread.start()
 
 def main():
-    
     broadcast_thread = threading.Thread(target = broadcast_messages)
     broadcast_thread.start()
 
@@ -209,5 +257,4 @@ def main():
 
 
 if __name__ == '__main__':
-    
     main()
