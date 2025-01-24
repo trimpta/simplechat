@@ -15,6 +15,13 @@ JOIN_MSG = "{} JOINED THE CHAT!"
 clients:dict[str, list[socket.socket,list[tuple]], list[socket.socket,list[tuple]]] = {}  # {nick : [forward_connection/0, backward_connection/1, (address, port)/2]}
 commands_queue = []
 message_queue = []
+commands = ['/exit', '/list', '/help']
+commands_description = {
+    '/exit': 'Disconnect from chat',
+    '/list': 'List all connected members',
+    '/help': 'List all commands'
+}
+
 
 
 server_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -43,7 +50,35 @@ def web_handler():
         httpd.serve_forever()
 
 def commands_hander():
-    raise NotImplementedError
+    global commands_queue
+    
+    while True:
+        
+        if not commands_queue:
+            continue
+
+        with threading.Lock():
+            popped_commands = commands_queue
+            commands_queue = []
+
+        print('\n'.join([f"{sender} :/{command}" for sender, command in popped_commands]))
+
+        for sender, command in popped_commands:
+            
+            if command == '/exit':
+                disconnect(sender)
+            elif command == '/list':
+                msg =  [
+                    ("CONNECTED MEMBERS: ", ','.join(clients.keys())),
+                ]
+                clients[sender][0].send(pickle.dumps(msg))
+            elif command == '/help':
+                msg =  [
+                    ("SERVER: ", ''.join([f"\t{command} : {commands_description[command]}\n" for command in commands])),
+                ]                
+                clients[sender][0].send(pickle.dumps(msg))
+        
+
 
 def get_username(conn_forward: socket.socket) -> str:
     
@@ -51,7 +86,7 @@ def get_username(conn_forward: socket.socket) -> str:
         conn_forward.send(b'NICK_SEND')
         nickname:str = conn_forward.recv(256).decode()
 
-        if re.fullmatch(VALID_USERNAME, nickname) is None:
+        if re.fullmatch(VALID_USERNAME, nickname) is None or nickname == "SERVER":
             conn_forward.send(b'NICK_INVALID')
             continue
 
@@ -71,11 +106,7 @@ def is_valid_message(message: str) -> bool:
     return True
 
 def is_command(message: str) -> bool:
-    return False
-
-# def broadcast_to_all(message:str):
-#     for client in clients:
-#         clients[client][1].send(message.encode())
+    return message in commands
 
 
 
@@ -90,8 +121,8 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
 
             if not message:
                 disconnect(nickname)
-                break
-            
+                raise ValueError("Empty message recieved")
+
             if message == "DISCONNECT":
                 disconnect(nickname)
                 break
@@ -100,7 +131,7 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
                 continue
 
             if is_command(message):
-                commands_queue.append(message)
+                commands_queue.append((nickname, message))
                 continue
             
             message_queue.append((nickname, message))
@@ -165,12 +196,16 @@ def accept_connections():
         client_thread.start()
 
 def main():
-
+    
     broadcast_thread = threading.Thread(target = broadcast_messages)
     broadcast_thread.start()
+
+    commands_thread = threading.Thread(target = commands_hander)
+    commands_thread.start()
 
     accept_connections()
 
 
 if __name__ == '__main__':
+    
     main()

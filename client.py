@@ -104,6 +104,7 @@ def recieve_messages(conn_forward: socket.socket):
                 sender, text = message
                 if sender != nick:
                     print(format_message(sender, text))
+            
 
 
         except Exception as e:
@@ -117,7 +118,7 @@ def send_messages(conn_backward: socket.socket):
         
         try:
 
-            message = input(">>>")
+            message = input()
 
             if message == "exit":
                 conn_backward.send(b'DISCONNECTING')
@@ -150,4 +151,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Exiting...")
+        disconnect()
