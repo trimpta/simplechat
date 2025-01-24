@@ -4,19 +4,35 @@ import socket
 import argparse
 import re
 
+
 SERVER_IP, SERVER_PORT = 'localhost',5906
 TIMEOUT = 60*120
 
 stop_threads = False
-
 nick = None
 
 
 
-def format_message(sender:str, message: str):
+def format_message(sender:str, message: str) -> str:
+    """Formats the message to be displayed
+
+    Args:
+        sender (str): sender of the message
+        message (str): content of the message
+
+    Returns:
+        str: formatted message
+    """
+
     return f"{sender} : {message}"
 
-def initiate_connection():
+def initiate_connection() -> socket.socket:
+    """Initiates a connection with the server
+
+    Returns:
+        socket.socket: connection with the server used to recieve messages
+    """
+
     conn_forward = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
 
@@ -32,7 +48,13 @@ def initiate_connection():
 
     return conn_forward
 
-def complete_connection():
+def complete_connection() -> socket.socket:
+    """Completes the connection with the server
+
+    Returns:
+        socket.socket: connection with the server used to recieve messages
+    """
+
     conn_backward = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
@@ -46,10 +68,20 @@ def complete_connection():
 
     return conn_backward
 
-def login(conn: socket.socket):
+def login(conn: socket.socket) -> bool:
+    """Logs in the user to the server
+
+    Args:
+        conn (socket.socket): connection with the server
+
+    Returns:
+        bool: True if login is successful, False otherwise
+    """
+
     global nick
 
-    while True:
+
+    for _ in range(3):
         msg = conn.recv(1024).decode()
         
         if msg != "NICK_SEND":
@@ -74,6 +106,13 @@ def login(conn: socket.socket):
     return False
 
 def safe_close(conn: socket.socket, message: str = None):
+    """Safely closes the connection
+
+    Args:
+        conn (socket.socket): connection to be closed
+        message (str, optional): Message to be sent before closing the connection. Defaults to None.
+    """
+
     try:
         if message:
             conn.send(message.encode())
@@ -83,6 +122,7 @@ def safe_close(conn: socket.socket, message: str = None):
         pass
 
 def disconnect():
+    """Disconnects the client from the server"""
     global conn_backward, conn_forward, stop_threads
     stop_threads = True
     
@@ -92,6 +132,11 @@ def disconnect():
 
 
 def recieve_messages(conn_forward: socket.socket):
+    """Recieves messages from the server and outputs them to the console
+
+    Args:
+        conn_forward (socket.socket): connection with the server used to recieve messages
+    """
     
     print("Recieving messages")
 
@@ -113,6 +158,11 @@ def recieve_messages(conn_forward: socket.socket):
             disconnect()
 
 def send_messages(conn_backward: socket.socket):
+    """Sends messages to the server
+
+    Args:
+        conn_backward (socket.socket): connection with the server used to recieve messages
+    """
 
     while not stop_threads:
         
