@@ -60,7 +60,7 @@ def commands_hander():
             popped_commands = commands_queue
             commands_queue = []
 
-        print('\n'.join([f"{sender} :/{command}" for sender, command in popped_commands]))
+        print('\n'.join([f"{sender} :{command}" for sender, command in popped_commands]))
 
         for sender, command in popped_commands:
             
@@ -73,7 +73,7 @@ def commands_hander():
                 clients[sender][0].send(pickle.dumps(msg))
             elif command == '/help':
                 msg =  [
-                    ("SERVER: ", ''.join([f"\t{command} : {commands[command]}\n" for command in commands])),
+                    ("SERVER:\n ", ''.join([f"{command} : {commands[command]}\n" for command in commands])),
                 ]                
                 clients[sender][0].send(pickle.dumps(msg))
         
@@ -239,6 +239,36 @@ def accept_connections():
         client_thread = threading.Thread(target = client_handler, args = (conn_backward, addr, nickname))
         client_thread.start()
 
+def server_commands():
+    """Handles commands recieved from the server"""
+
+    while True:
+
+        try:
+            command = input().split()
+
+            if command[0] == '/exit':
+                for client in clients:
+                    disconnect(client)
+                break
+            elif command[0] == '/list':
+                print(''.join([f"{client} : {clients[client][2]}\n" for client in clients]))
+            elif command[0] == '/kick':
+                if command[1] in clients:
+                    disconnect(command[1])
+                else:
+                    print("Client not found")
+            elif command[0] == '/say':
+                #Unicode blank character is used so client.py doesnt filter out the message
+                message_queue.append((command[1] + "‎", ' '.join(command[2:])))
+        
+        except Exception as e:
+            print(f"SERVERERROR: Error while processing command")
+            print(f"SERVERERROR: {e}")
+        
+
+        
+
 def main():
     broadcast_thread = threading.Thread(target = broadcast_messages)
     broadcast_thread.start()
@@ -246,7 +276,11 @@ def main():
     commands_thread = threading.Thread(target = commands_hander)
     commands_thread.start()
 
-    accept_connections()
+    connections_thread = threading.Thread(target = accept_connections)
+    connections_thread.start()
+
+    server_commands_thread = threading.Thread(target = server_commands)
+    server_commands_thread.start()
 
 
 if __name__ == '__main__':

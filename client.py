@@ -131,9 +131,9 @@ def disconnect():
         safe_close(conn_backward, "DISCONNECT")
         safe_close(conn_forward)
     except Exception as e:
-        print("Error while disconnecting. Contact administrator.")
-        # print(f"Error: {e}")
-    print("Press Enter to close.")
+        pass
+    if stop_threads:
+        print("You have been disconnected. Press Enter to close.")
     sys.exit()
 
 
@@ -152,6 +152,7 @@ def recieve_messages(conn_forward: socket.socket):
 
             messages = pickle.loads(conn_forward.recv(1024))
             for message in messages:
+
                 sender, text = message
                 if sender != nick:
                     print(format_message(sender, text))
@@ -159,9 +160,11 @@ def recieve_messages(conn_forward: socket.socket):
 
 
         except Exception as e:
-            print("Error while recieving message. Contact administrator.")
-            # print(f"Error: {e}")
             disconnect()
+
+            if not stop_threads:
+                print("Error while recieving message. Contact administrator.")
+            # print(f"Error: {e}")
 
 def send_messages(conn_backward: socket.socket):
     """Sends messages to the server
@@ -184,9 +187,10 @@ def send_messages(conn_backward: socket.socket):
             conn_backward.send(message.encode())
 
         except Exception as e:
-            print("Error while sending message. Contact administrator.")
-            # print(f"Error: {e}")
             disconnect()
+            if not stop_threads:
+                print("Error while sending message. Contact administrator.")
+            # print(f"Error: {e}")
         
     return
 
