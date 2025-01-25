@@ -4,7 +4,7 @@ Run this script to serve the client.py file on the local network with the correc
 Clients can now connect to the server with a single command.
 
 Windows clients: 
-    curl -s http://<ip_address>:8000/client.py -o client.py && python client.py
+    curl http://<ip_address>:8000/client.py -o client.py ;/ python client.py
 
 Linux clients:
     wget http://<ip_address>:8000/client.py && python3 client.py

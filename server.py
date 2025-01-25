@@ -40,11 +40,14 @@ def disconnect(nickname: str):
         nickname (str): The nickname of the user to be disconnected
     """
     
-    clients[nickname][0].close()
-    clients[nickname][1].close()
-
-    message_queue.append(("SERVER", f"{nickname} LEFT THE CHAT!"))
-    clients.pop(nickname)
+    if nickname in clients:
+        clients[nickname][0].close()
+        clients[nickname][1].close()
+        
+        try:
+            clients.pop(nickname)
+        except KeyError:
+            pass
 
 def commands_hander():
     """Handles commands recieved from clients"""
@@ -145,9 +148,6 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
         conn_forward (socket.socket): connection to the client used to send messages from server to client
         addr (str): address of the client
         nickname (str): nickname of the client
-
-    Raises:
-        ValueError: If an empty message is recieved
     """
 
     print(f"New connection from {nickname}@{addr}")
@@ -159,7 +159,7 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
 
             if not message:
                 disconnect(nickname)
-                raise ValueError("Empty message recieved")
+                break
 
             if message == "DISCONNECT":
                 disconnect(nickname)
@@ -174,10 +174,11 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
             
             message_queue.append((nickname, message))
 
-    except Exception as e:
-        print(f"CLIENTERROR: Error recieving message from {nickname}@{addr}")
-        print(f"CLIENTERROR: {e}")
+    except ConnectionAbortedError as e:
+        print(f"CLIENTERROR: {nickname}@{addr} disconnected")
         disconnect(nickname)
+
+    message_queue.append(("SERVER", f"{nickname} LEFT THE CHAT!"))
 
     
 
@@ -202,9 +203,9 @@ def broadcast_messages():
             
             try:
                 clients[client][0].send(pickle.dumps(popped_messages))
-            except Exception as e:
+            
+            except ConnectionResetError as e:
                 print(f"CLIENTERROR: Error sending message to {client}@{clients[client][2]}")
-                print(e)
                 disconnect(client)
 
 def accept_connections():
@@ -221,7 +222,6 @@ def accept_connections():
         
         except ValueError as e:
             print(f"CLIENTERROR: Invalid username from @{addr}")
-            print(f"CLIENTERROR: {e}\nCLIENTERROR")
             conn_forward.close()
             continue
 
