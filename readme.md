@@ -66,6 +66,12 @@ The server dynamically modifies and serves the `client.py` file to ensure the cl
   wget http://192.168.0.101:8000/client.py && python3 client.py
   ```
 
+### Commands
+
+- `/exit`: Disconnect from the server.
+- `/list`: See all connected members.
+- `/help`: Display the list of available commands.
+
 ## Limitations
 
 - **Local Network Only**: This chatroom works only on devices connected to the same local network.
