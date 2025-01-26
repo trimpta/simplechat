@@ -14,9 +14,24 @@ JOIN_MSG = "{} JOINED THE CHAT!"
 clients:dict[str, list[socket.socket,list[tuple]], list[socket.socket,list[tuple]]] = {}  # {nick : [forward_connection/0, backward_connection/1, (address, port)/2]}
 commands_queue = []
 message_queue = []
+admins = []
+
 commands = {
     '/exit': 'Disconnect from chat',
     '/list': 'List all connected members',
+    '/help': 'List all commands',
+    '/kick': 'Kick a user from the chat',
+}
+
+commands_server = {
+    '/exit': 'Disconnect from chat',
+    '/list': 'List all connected members',
+    '/kick': 'Kick a user from the chat',
+    '/say': 'Send a message to all users',
+    '/tellraw': 'send a raw message',
+    '/admin': 'Add a user to the admin list',
+    '/deop': 'Remove a user from the admin list',
+    '/list_admins': 'List all admins',
     '/help': 'List all commands'
 }
 
@@ -79,6 +94,17 @@ def commands_hander():
                     ("SERVER:\n ", ''.join([f"{command} : {commands[command]}\n" for command in commands])),
                 ]                
                 clients[sender][0].send(pickle.dumps(msg))
+
+            elif command.startswith('/kick'):
+
+                if sender in admins:
+                    nickname = command.split()[1]
+                    if nickname in clients:
+                        disconnect(nickname)
+                    else:
+                        clients[sender][0].send(pickle.dumps([("SERVER", "Client not found")]))
+                else:
+                    clients[sender][0].send(pickle.dumps([("SERVER", "You are not an admin")]))
         
 
 
@@ -137,7 +163,7 @@ def is_command(message: str) -> bool:
         bool: True if the message is a command, False otherwise
     """
 
-    return message in commands
+    return message.split()[0] in commands
 
 
 
@@ -197,7 +223,16 @@ def broadcast_messages():
             popped_messages = message_queue
             message_queue = []
 
-        print('\n'.join([f"{sender} : {message}" for sender, message in popped_messages]))
+        # print('\n'.join([f"{sender} : {message}" for sender, message in popped_messages]))
+
+        for msg in popped_messages:
+            
+            if len(msg) != 2:
+                continue
+            
+            sender, message = msg
+            print(f"{sender} : {message}")
+                
         
         for client in clients:
             
@@ -247,21 +282,50 @@ def server_commands():
         try:
             command = input().split()
 
+            if command[0] not in commands_server:
+                print(f"SERVERERROR: Invalid command")
+                continue
+
             if command[0] == '/exit':
                 for client in clients:
                     disconnect(client)
                 break
+
             elif command[0] == '/list':
                 print(''.join([f"{client} : {clients[client][2]}\n" for client in clients]))
+
             elif command[0] == '/kick':
                 if command[1] in clients:
                     disconnect(command[1])
                 else:
                     print("Client not found")
+
             elif command[0] == '/say':
                 #Unicode blank character is used so client.py doesnt filter out the message
-                message_queue.append((command[1] + "‎", ' '.join(command[2:])))
-        
+                message_queue.append(("SERVER", ' '.join(command[2:])))
+
+            elif command[0] == '/tellraw':
+                message_queue.append((
+                    ' '.join(command[1:]
+                             ),))
+                
+            elif command[0] == '/admin':
+                if command[1] not in admins and command[1] in clients:
+                    admins.append(command[1])
+            
+            elif command[0] == '/deop':
+                if command[1] in admins:
+                    admins.remove(command[1])
+                else:
+                    print("User not an admin")
+
+            elif command[0] == '/list_admins':
+                print(''.join([f"{admin}\n" for admin in admins]))
+            
+            elif command[0] == '/help':
+                print(''.join([f"{command} : {commands_server[command]}\n" for command in commands_server]))
+
+
         except Exception as e:
             print(f"SERVERERROR: Error while processing command")
             print(f"SERVERERROR: {e}")

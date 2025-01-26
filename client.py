@@ -11,7 +11,7 @@ TIMEOUT = 60*120
 stop_threads = False
 nick = None
 
-
+show_error = True
 
 def format_message(sender:str, message: str) -> str:
     """Formats the message to be displayed
@@ -42,7 +42,7 @@ def initiate_connection() -> socket.socket:
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
-        disconnect()
+        disconnect(e)
         # print(f"Error: {e}")
 
 
@@ -64,7 +64,7 @@ def complete_connection() -> socket.socket:
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
-        disconnect()
+        disconnect(e)
         # print(f"Error: {e}")
 
     return conn_backward
@@ -86,7 +86,7 @@ def login(conn: socket.socket) -> bool:
         msg = conn.recv(1024).decode()
         
         if msg != "NICK_SEND":
-            disconnect()
+            disconnect(None)
             print("Error while logging in. Please contact administrator.")
         
         nick = input("Enter your nickname: ")
@@ -122,11 +122,14 @@ def safe_close(conn: socket.socket, message: str = None):
     except:
         pass
 
-def disconnect():
+def disconnect(error):
     """Disconnects the client from the server"""
     global conn_backward, conn_forward, stop_threads
     stop_threads = True
     
+    if error:
+        print(f"Error: {error}")
+
     try:
         safe_close(conn_backward, "DISCONNECT")
         safe_close(conn_forward)
@@ -151,8 +154,13 @@ def recieve_messages(conn_forward: socket.socket):
         try:
 
             messages = pickle.loads(conn_forward.recv(1024))
-            for message in messages:
 
+            for message in messages:
+                
+                if len(message) == 1:
+                    print(message[0])
+                    continue
+                
                 sender, text = message
                 if sender != nick:
                     print(format_message(sender, text))
@@ -160,7 +168,7 @@ def recieve_messages(conn_forward: socket.socket):
 
 
         except Exception as e:
-            disconnect()
+            disconnect(e)
 
             if not stop_threads:
                 print("Error while recieving message. Contact administrator.")
@@ -181,13 +189,13 @@ def send_messages(conn_backward: socket.socket):
 
             if message == "exit":
                 conn_backward.send(b'DISCONNECTING')
-                disconnect()
+                disconnect(None)
                 break
 
             conn_backward.send(message.encode())
 
         except Exception as e:
-            disconnect()
+            disconnect(e)
             if not stop_threads:
                 print("Error while sending message. Contact administrator.")
             # print(f"Error: {e}")
@@ -223,4 +231,4 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print("Exiting...")
-        disconnect()
+        disconnect(None)
