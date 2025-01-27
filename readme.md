@@ -1,5 +1,10 @@
 # simple chat
 
+<video controls width="600">
+  <source src="./demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 A simple, multithreaded chatroom built in Python.
 
 The chatroom uses a **server-client model**:
