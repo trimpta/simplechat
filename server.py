@@ -155,7 +155,7 @@ def commands_hander():
                         continue
 
 
-                    msg = ' '.join(command.split()[2:])
+                    msg = f"[WHISPER] {sender} : " + ' '.join(command.split()[2:])
                     whisper(target, msg)
                     # clients[target][0].send(pickle.dumps([(f"[WHISPER] {sender} : {msg}", )]))
 
