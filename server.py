@@ -16,11 +16,15 @@ commands_queue = []
 message_queue = []
 admins = []
 
+done = False
+
 commands = {
     '/exit': 'Disconnect from chat',
     '/list': 'List all connected members',
-    '/help': 'List all commands',
-    '/kick': 'Kick a user from the chat',
+    '/help': 'Show description for all commands, or /help <cmd> for a specific command.',
+    '/kick': 'Kick a user from the chat. Requires admin previlages. /kick <nickname>',
+    '/whisper': 'Send a private message to a user. /whisper <target username> message',
+    '/clear' : 'Clear your screen. [WARNING] All messages will be gone, and you wont be able to see them again'
 }
 
 commands_server = {
@@ -64,12 +68,22 @@ def disconnect(nickname: str):
         except KeyError:
             pass
 
+
+def whisper(target: str, message: str):
+    """send raw message to specific target
+
+    Args:
+        target (str): nickname of target
+        message (str): message.
+    """
+    clients[target][0].send(pickle.dumps([(message, )]))
+
 def commands_hander():
     """Handles commands recieved from clients"""
 
-    global commands_queue
+    global commands_queue, done
     
-    while True:
+    while not done:
         
         if not commands_queue:
             continue
@@ -85,15 +99,13 @@ def commands_hander():
             if command == '/exit':
                 disconnect(sender)
             elif command == '/list':
-                msg =  [
-                    ("CONNECTED MEMBERS: ", ','.join(clients.keys())),
-                ]
-                clients[sender][0].send(pickle.dumps(msg))
+
+                str = ''.join([f"{'[ADMIN] ' if client in admins else ''}{client}, " for client in clients])                
+                whisper( sender, str)
+                
             elif command == '/help':
-                msg =  [
-                    ("SERVER:\n ", ''.join([f"{command} : {commands[command]}\n" for command in commands])),
-                ]                
-                clients[sender][0].send(pickle.dumps(msg))
+                msg =  ''.join([f"{command} : {commands[command]}\n" for command in commands])           
+                whisper(sender, msg)
 
             elif command.startswith('/kick'):
 
@@ -105,8 +117,45 @@ def commands_hander():
                         clients[sender][0].send(pickle.dumps([("SERVER", "Client not found")]))
                 else:
                     clients[sender][0].send(pickle.dumps([("SERVER", "You are not an admin")]))
-        
 
+            elif command.startswith('/help') and len(command.split()) == 2:
+
+                _, cmd = command.split()
+
+                if cmd in commands:
+                    whisper(sender, f"{cmd} : {commands[cmd]}")
+
+                if f"/{cmd}" in commands:
+                    whisper(sender, f"/{cmd} : {commands[f'/{cmd}']}")
+
+            
+            elif command.startswith('/whisper'):
+
+                    split = command.split()
+                    # split = ['/whisper', 'target_nick', 'msgword1', 'msgword2', ....]
+
+                    print(f"{sender} : {command}")
+                    if len(split) == 1:
+                        # clients[sender][0].send(pickle.dumps([("SERVER", "Please specify user to send message to.")]))
+                        whisper(sender, "Please specify user to send message to")
+                        continue
+
+                    if len(split) == 2:
+                        # clients[sender][0].send(pickle.dumps([("SERVER", "Please enter message content.")]))
+                        whisper(sender, "Please enter message content.")
+                        continue
+
+
+                    target = command.split()[1]
+
+                    if target not in clients:
+                        clients[sender][0].send(pickle.dumps([("SERVER", "Client not found")]))
+                        continue
+
+
+                    msg = ' '.join(command.split()[2:])
+                    whisper(target, msg)
+                    # clients[target][0].send(pickle.dumps([(f"[WHISPER] {sender} : {msg}", )]))
 
 def get_username(conn_forward: socket.socket) -> str:
     """Gets the username of the client
@@ -176,10 +225,12 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
         nickname (str): nickname of the client
     """
 
+    global done
+
     print(f"New connection from {nickname}@{addr}")
 
     try:
-        while True:
+        while not done:
 
             message = conn_forward.recv(1024).decode()
 
@@ -212,9 +263,9 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
 def broadcast_messages():
     """Broadcasts messages to all clients and prints them to the server"""
 
-    global message_queue
+    global message_queue, done
     
-    while True:
+    while not done:
         
         if not message_queue:
             continue
@@ -246,7 +297,9 @@ def broadcast_messages():
 def accept_connections():
     """Accepts connections from clients and creates a new thread to handle each client connection"""
     
-    while True:
+    global done
+
+    while not done:
         #conn_forward is used to send messages to client, and conn_backward is used to recieve messages from client
         #conn_forward is also used to recieve from client until a proper connection is established
 
@@ -254,6 +307,10 @@ def accept_connections():
 
         try:
             nickname = get_username(conn_forward)
+        
+        except ConnectionAbortedError:
+            print(f"CLIENTERROR: @{addr} aborted during login.")
+            continue
         
         except ValueError as e:
             print(f"CLIENTERROR: Invalid username from @{addr}")
@@ -268,6 +325,8 @@ def accept_connections():
         
         
         clients[nickname] = [conn_forward, conn_backward, addr]
+
+        whisper(nickname, 'Welcome to the chatroom, all messages you send are public by default. do /help to get a list of commands.')
         message_queue.append(("SERVER", JOIN_MSG.format(nickname)))
 
     
@@ -277,7 +336,9 @@ def accept_connections():
 def server_commands():
     """Handles commands recieved from the server"""
 
-    while True:
+    global done
+
+    while not done:
 
         try:
             command = input().split()
@@ -287,12 +348,15 @@ def server_commands():
                 continue
 
             if command[0] == '/exit':
+                
+                done = True
+
                 for client in clients:
                     disconnect(client)
                 break
 
             elif command[0] == '/list':
-                print(''.join([f"{client} : {clients[client][2]}\n" for client in clients]))
+                print(''.join([f"{'[ADMIN] ' if client in admins else ''}{client} : {clients[client][2]}\n" for client in clients]))
 
             elif command[0] == '/kick':
                 if command[1] in clients:
@@ -305,13 +369,12 @@ def server_commands():
                 message_queue.append(("SERVER", ' '.join(command[2:])))
 
             elif command[0] == '/tellraw':
-                message_queue.append((
-                    ' '.join(command[1:]
-                             ),))
+                message_queue.append((' '.join(command[1:]),))
                 
             elif command[0] == '/admin':
                 if command[1] not in admins and command[1] in clients:
                     admins.append(command[1])
+                    print(f"Added {command[1]} to admins list.")
             
             elif command[0] == '/deop':
                 if command[1] in admins:
@@ -326,9 +389,20 @@ def server_commands():
                 print(''.join([f"{command} : {commands_server[command]}\n" for command in commands_server]))
 
 
-        except Exception as e:
-            print(f"SERVERERROR: Error while processing command")
-            print(f"SERVERERROR: {e}")
+        except EOFError as e:
+            print("Recieved keyboard interrupt, exiting")
+            done = True
+            break
+        
+        except KeyboardInterrupt as e:
+
+            print("Recieved keyboard interrupt, exiting")
+            done = True
+            break
+        
+        # except Exception as e:
+        #     print(f"SERVERERROR: Error while processing command")
+        #     print(f"SERVERERROR: {e}")
         
 
         
@@ -345,6 +419,7 @@ def main():
 
     server_commands_thread = threading.Thread(target = server_commands)
     server_commands_thread.start()
+
 
 
 if __name__ == '__main__':

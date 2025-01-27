@@ -3,6 +3,7 @@ import time
 import pickle
 import socket
 import sys
+import os
 
 
 SERVER_IP, SERVER_PORT = 'localhost',5906
@@ -12,6 +13,13 @@ stop_threads = False
 nick = None
 
 show_error = True
+
+
+def clear_screen():
+    if sys.platform.startswith('win'):
+        os.system('cls')
+    else:
+        os.system('clear')
 
 def format_message(sender:str, message: str) -> str:
     """Formats the message to be displayed
@@ -186,6 +194,9 @@ def send_messages(conn_backward: socket.socket):
         try:
 
             message = input()
+
+            if message == "/clear":
+                clear_screen()
 
             if message == "exit":
                 conn_backward.send(b'DISCONNECTING')
