@@ -53,7 +53,6 @@ def initiate_connection() -> socket.socket:
         disconnect(e)
         # print(f"Error: {e}")
 
-
     return conn_forward
 
 def complete_connection() -> socket.socket:
@@ -87,7 +86,6 @@ def login(conn: socket.socket) -> bool:
     """
 
     global nick
-
 
     for _ in range(3):
         msg = conn.recv(1024).decode()
@@ -146,8 +144,6 @@ def disconnect(error):
         print("You have been disconnected. Press Enter to close.")
     sys.exit()
 
-
-
 def recieve_messages(conn_forward: socket.socket):
     """Recieves messages from the server and outputs them to the console
 
@@ -172,8 +168,6 @@ def recieve_messages(conn_forward: socket.socket):
                 if sender != nick:
                     print(format_message(sender, text))
             
-
-
         except Exception as e:
             disconnect(e)
 
@@ -212,7 +206,6 @@ def send_messages(conn_backward: socket.socket):
         
     return
 
-
 def main():
 
     conn_forward  = initiate_connection()
@@ -228,12 +221,6 @@ def main():
 
     recv.start()
     send.start()
-
-    # while True:
-    #     time.sleep(1)
-    #     if stop_threads:
-            
-            
 
 
 if __name__ == '__main__':

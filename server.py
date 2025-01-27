@@ -41,7 +41,6 @@ commands_server = {
     'help': 'List all commands'
 }
 
-
 #initialize sockets for server and reciever
 server_conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server_conn.bind((HOST, PORT))
@@ -69,7 +68,6 @@ def disconnect(nickname: str):
             clients.pop(nickname)
         except KeyError:
             pass
-
 
 def whisper(target: str, message: str):
     """send raw message to specific target
@@ -147,13 +145,11 @@ def commands_hander():
                         whisper(sender, "Please enter message content.")
                         continue
 
-
                     target = command.split()[1]
 
                     if target not in clients:
                         clients[sender][0].send(pickle.dumps([("SERVER", "Client not found")]))
                         continue
-
 
                     msg = f"[WHISPER] {sender} : " + ' '.join(command.split()[2:])
                     whisper(target, msg)
@@ -216,8 +212,6 @@ def is_command(message: str) -> bool:
 
     return message.split()[0] in commands
 
-
-
 def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
     """Handles messages recieved from clients
 
@@ -258,9 +252,6 @@ def client_handler(conn_forward: socket.socket, addr:str, nickname: str):
         disconnect(nickname)
 
     message_queue.append(("SERVER", f"{nickname} LEFT THE CHAT!"))
-
-    
-
 
 def broadcast_messages():
     """Broadcasts messages to all clients and prints them to the server"""
@@ -385,13 +376,11 @@ def server_commands():
                     print("Please enter message content.")
                     continue
 
-
                 target = command[1]
 
                 if target not in clients:
                     print("Target not found.")
                     continue
-
 
                 msg = ('' if command[0] == 'rawsp' else "[WHISPER] SERVER : ") + ' '.join(command[2:]) 
                 whisper(target, msg)
@@ -413,7 +402,6 @@ def server_commands():
             elif command[0] == 'help':
                 print(''.join([f"{command} : {commands_server[command]}\n" for command in commands_server]))
 
-
         except EOFError as e:
             print("Recieved keyboard interrupt, exiting")
             done = True
@@ -428,9 +416,6 @@ def server_commands():
         # except Exception as e:
         #     print(f"SERVERERROR: Error while processing command")
         #     print(f"SERVERERROR: {e}")
-        
-
-        
 
 def main():
     broadcast_thread = threading.Thread(target = broadcast_messages)
@@ -444,7 +429,6 @@ def main():
 
     server_commands_thread = threading.Thread(target = server_commands)
     server_commands_thread.start()
-
 
 
 if __name__ == '__main__':
