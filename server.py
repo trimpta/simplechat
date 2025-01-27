@@ -28,15 +28,17 @@ commands = {
 }
 
 commands_server = {
-    '/exit': 'Disconnect from chat',
-    '/list': 'List all connected members',
-    '/kick': 'Kick a user from the chat',
-    '/say': 'Send a message to all users',
-    '/tellraw': 'send a raw message',
-    '/admin': 'Add a user to the admin list',
-    '/deop': 'Remove a user from the admin list',
-    '/list_admins': 'List all admins',
-    '/help': 'List all commands'
+    'exit': 'Disconnect from chat',
+    'list': 'List all connected members',
+    'kick': 'Kick a user from the chat',
+    'say': 'Send a message to all users',
+    'tellraw' : 'send a raw message',
+    'whisper' : 'send a message to a specific user',
+    'rawsp' : 'send a raw message to a specific user',
+    'admin': 'Add a user to the admin list',
+    'deop': 'Remove a user from the admin list',
+    'list_admins': 'List all admins',
+    'help': 'List all commands'
 }
 
 
@@ -347,45 +349,68 @@ def server_commands():
                 print(f"SERVERERROR: Invalid command")
                 continue
 
-            if command[0] == '/exit':
+            if command[0] == 'exit':
                 
-                done = True
-
                 for client in clients:
                     disconnect(client)
+
+                done = True
                 break
 
-            elif command[0] == '/list':
+            elif command[0] == 'list':
                 print(''.join([f"{'[ADMIN] ' if client in admins else ''}{client} : {clients[client][2]}\n" for client in clients]))
 
-            elif command[0] == '/kick':
+            elif command[0] == 'kick':
                 if command[1] in clients:
                     disconnect(command[1])
                 else:
                     print("Client not found")
 
-            elif command[0] == '/say':
+            elif command[0] == 'say':
                 #Unicode blank character is used so client.py doesnt filter out the message
                 message_queue.append(("SERVER", ' '.join(command[2:])))
 
-            elif command[0] == '/tellraw':
+            elif command[0] == 'tellraw':
                 message_queue.append((' '.join(command[1:]),))
+
+            elif command[0] in ['whisper', 'rawsp']:
+
+                if len(command) == 1:
+                    # clients[sender][0].send(pickle.dumps([("SERVER", "Please specify user to send message to.")]))
+                    print("Please specify user to send message to")
+                    continue
+
+                if len(command) == 2:
+                    # clients[sender][0].send(pickle.dumps([("SERVER", "Please enter message content.")]))
+                    print("Please enter message content.")
+                    continue
+
+
+                target = command[1]
+
+                if target not in clients:
+                    print("Target not found.")
+                    continue
+
+
+                msg = ('' if command[0] == 'rawsp' else "[WHISPER] SERVER : ") + ' '.join(command[2:]) 
+                whisper(target, msg)
                 
-            elif command[0] == '/admin':
+            elif command[0] == 'admin':
                 if command[1] not in admins and command[1] in clients:
                     admins.append(command[1])
                     print(f"Added {command[1]} to admins list.")
             
-            elif command[0] == '/deop':
+            elif command[0] == 'deop':
                 if command[1] in admins:
                     admins.remove(command[1])
                 else:
                     print("User not an admin")
 
-            elif command[0] == '/list_admins':
+            elif command[0] == 'list_admins':
                 print(''.join([f"{admin}\n" for admin in admins]))
             
-            elif command[0] == '/help':
+            elif command[0] == 'help':
                 print(''.join([f"{command} : {commands_server[command]}\n" for command in commands_server]))
 
 

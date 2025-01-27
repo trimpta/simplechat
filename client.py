@@ -68,7 +68,6 @@ def complete_connection() -> socket.socket:
     try:
         conn_backward.connect((SERVER_IP, SERVER_PORT + 1))
         conn_backward.settimeout(TIMEOUT)
-        print("Connected.")
 
     except Exception as e:
         print("Error trying to connect to server. Contact administrator.")
@@ -135,8 +134,8 @@ def disconnect(error):
     global conn_backward, conn_forward, stop_threads
     stop_threads = True
     
-    if error:
-        print(f"Error: {error}")
+    # if error:
+        # print(f"Error: {error}")
 
     try:
         safe_close(conn_backward, "DISCONNECT")
