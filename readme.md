@@ -1,81 +1,86 @@
-# simple chat
+# simplechat - LAN-Based CLI Chatroom
 
 ![Demo GIF](./demo.gif)
 
-A simple, multithreaded chatroom built in Python.
+A simple realtime chatroom built in python.
 
-The chatroom uses a **server-client model**:
+## Commands
 
-- **Server**: Manages all connected clients and broadcasts messages.
-- **Clients**: Connect to the server, send messages, and receive updates from others in the chatroom.
+| Command         | Description                          |
+|-----------------|--------------------------------------|
+| `/exit`         | Disconnect from chat                 |
+| `/list`         | Show connected users                 |
+| `/help`         | Display command help                 |
+| `/kick <user>`  | Remove a user from chat. Admin previlages required              |
+| `/whisper <user>` | Send private message               |
+| `/clear`        | Clear chat history                   |
+| `/help`         | Get a list of available commands.    |
 
-The server dynamically modifies and serves the `client.py` file to ensure the client script always has the correct server IP.
+## Installation
 
-## Getting Started
+**Requirements:**
 
-### Prerequisites
+- Python 3.6+
+- Network access between machines
 
-- Python 3.9 or higher installed on all devices.
-- All devices should be on the same local network.
+```bash
+git clone https://github.com/trimpta/simplechat.git
+cd simplechat
+```
 
-### Steps
+## Usage
 
-1. **Start the Server**:\
-   On the server machine, run:
+### Server Setup
+
+1. Start the chat server and file server:
+
+```bash
+python serve_client.py
+```
+
+### Client Connection
+
+Run **one** of these commands in any terminal:
+
+**Linux:**
+
+```bash
+wget http://<server-ip>:8000/client.py && python3 client.py
+```
+
+**Windows:**
+
+```powershell
+curl http://<server-ip>:8000/client.py -o client.py && python client.py
+```
+
+Replace `<server-ip>` with the host machine's local IP address.
+
+## Security Notice
+
+This is a **proof-of-concept** system designed for trusted local networks:
+
+- No message encryption
+- Basic admin controls
+- Plaintext communication
+- Not recommended for internet exposure
+
+## Troubleshooting
+
+**Common Issues:**
+
+1. **Connection Failed**
+   - Verify server IP address
+   - Check firewall settings:
 
    ```bash
-   python serve_client.py
+   sudo ufw allow 5906:5907/tcp
+   sudo ufw allow 8000/tcp
    ```
 
-2. **Connect Clients**:
+2. **Username Errors**
+   - Use 3-20 characters
+   - Valid formats: letters, numbers, (- _ .)
 
-   - **Windows Clients**:\
-     Use the following command:
-
-     ```bash
-     curl -s http://<server_ip>:8000/client.py -o client.py && python client.py
-     ```
-
-   - **Linux Clients**:\
-     Use the following command:
-
-     ```bash
-     wget http://<server_ip>:8000/client.py && python3 client.py
-     ```
-
-   Replace `<server_ip>` with the IP address of the server machine.
-
-3. **Join the Chatroom**:\
-   Enter a nickname when prompted (must be unique among active users), and you're in.
-
-### Example
-
-- Server starts the chatroom:
-
-  ```bash
-  python serve_client.py
-  ```
-
-- A Windows client connects using:
-
-  ```bash
-  curl -s http://192.168.0.101:8000/client.py -o client.py && python client.py
-  ```
-
-- A Linux client connects using:
-
-  ```bash
-  wget http://192.168.0.101:8000/client.py && python3 client.py
-  ```
-
-### Commands
-
-- `/exit`: Disconnect from the server.
-- `/list`: See all connected members.
-- `/help`: Display the list of available commands.
-
-## Limitations
-
-- **Local Network Only**: This chatroom works only on devices connected to the same local network.
-- **No Encryption**: Messages are sent in plain text (so don’t share secrets!).
-- **Work in Progress**: Expect a lot of bugs—it’s still under development.
+3. **Stuck Messages**
+   - Try Restarting client and/or server

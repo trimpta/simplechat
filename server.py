@@ -1,6 +1,5 @@
 import threading
 import pickle
-import http.server
 import socketserver
 import socket
 import re

@@ -1,23 +1,10 @@
-"""
-Run this script to serve the client.py file on the local network with the correct IP address.
-
-Clients can now connect to the server with a single command.
-
-Windows clients: 
-    curl http://<ip_address>:8000/client.py -o client.py ;/ python client.py
-
-Linux clients:
-    wget http://<ip_address>:8000/client.py && python3 client.py
-"""
-
 import socket
-import http.server
 import threading
 import os
 from server import *
 
 linux_command = "wget http://{}:8000/client.py && python3 client.py"
-windows_command = "curl -s http://{}:8000/client.py -o client.py && python client.py"
+windows_command = "curl http://{}:8000/client.py -o client.py ; python client.py"
 
 hostname = socket.gethostname()
 ip_address = socket.gethostbyname(hostname)
