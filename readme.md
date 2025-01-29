@@ -1,5 +1,8 @@
 # simplechat - LAN-Based CLI Chatroom
 
+> [!WARNING]  
+> Some of the worst code you're ever gonna see lies ahead.
+
 ![Demo GIF](./demo.gif)
 
 A simple realtime chatroom built in python.

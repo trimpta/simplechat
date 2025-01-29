@@ -10,7 +10,7 @@ TIMEOUT = 60*120
 
 JOIN_MSG = "{} JOINED THE CHAT!"
 
-clients:dict[str, list[socket.socket,list[tuple]], list[socket.socket,list[tuple]]] = {}  # {nick : [forward_connection/0, backward_connection/1, (address, port)/2]}
+clients = {}  # {nick : [forward_connection/0, backward_connection/1, (address, port)/2]}
 commands_queue = []
 message_queue = []
 admins = []
